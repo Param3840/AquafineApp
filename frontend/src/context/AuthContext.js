@@ -38,10 +38,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signup = async (payload) => {
+    // Clear any stale session first
+    setToken(null);
+    setUser(null);
+    await AsyncStorage.multiRemove(["aquafine_token", "aquafine_user"]);
+
     const data = await authService.register(payload);
-    if (data.token && data.user) {
-      await saveSession(data);
-    }
     return data;
   };
 

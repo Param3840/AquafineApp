@@ -29,8 +29,10 @@ const SignupScreen = ({ onLogin, onSuccess }) => {
     setLoading(true);
     try {
       const data = await signup(form);
-      setMessage(data.message || "Account created successfully. Logging you in...");
-      setTimeout(() => onSuccess?.(), 1200);
+      setMessage(data.message || "Verification email sent. Please verify your email before logging in.");
+      setTimeout(() => {
+        onLogin?.();
+      }, 4000);
     } catch (err) {
       setError(err.message);
     } finally {

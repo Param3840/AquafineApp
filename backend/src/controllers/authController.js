@@ -58,15 +58,31 @@ const register = async (req, res) => {
       email,
       mobile,
       password: hashedPassword,
-      isVerified: true,
+      isVerified: false,
     });
 
-    const token = generateToken(user._id);
+    const verificationToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || "aquafine_dev_secret",
+      { expiresIn: "1d" }
+    );
+
+    const verificationUrl = `${req.protocol}://${req.get("host")}/api/auth/verify/${verificationToken}`;
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "Verify your Aquafine account",
+        html: buildVerificationEmail({ fullName: user.fullName, verificationUrl }),
+      });
+    } catch (emailError) {
+      console.error("Failed to send verification email:", emailError.message);
+      console.log(`[DEV/TEST] Verification URL: ${verificationUrl}`);
+    }
 
     res.status(201).json({
-      message: "Account created successfully.",
-      token,
-      user: formatUser(user),
+      success: true,
+      message: "Verification email sent. Please verify your email before login.",
     });
   } catch (error) {
     console.error("Registration failed:", error.message);
@@ -116,7 +132,7 @@ const login = async (req, res) => {
     if (!user.isVerified) {
       return res
         .status(401)
-        .json({ message: "Please verify your email first" });
+        .json({ message: "Please verify your email before logging in." });
     }
 
     res.json({
