@@ -53,6 +53,7 @@ const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    console.log(`[SIGNUP] Creating database record for email: ${email}, mobile: ${mobile}`);
     const user = await User.create({
       fullName,
       email,
@@ -60,7 +61,9 @@ const register = async (req, res) => {
       password: hashedPassword,
       isVerified: false,
     });
+    console.log(`[SIGNUP SUCCESS] User created in database with ID: ${user._id}, isVerified: ${user.isVerified}`);
 
+    console.log(`[SIGNUP] Generating verification token for user ID: ${user._id}`);
     const verificationToken = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET || "aquafine_dev_secret",
@@ -68,16 +71,19 @@ const register = async (req, res) => {
     );
 
     const verificationUrl = `${req.protocol}://${req.get("host")}/api/auth/verify/${verificationToken}`;
+    console.log(`[SIGNUP] Generated verification URL: ${verificationUrl}`);
 
     try {
+      console.log(`[SIGNUP] Triggering email delivery to: ${user.email}`);
       await sendEmail({
         to: user.email,
         subject: "Verify your Aquafine account",
         html: buildVerificationEmail({ fullName: user.fullName, verificationUrl }),
       });
+      console.log(`[SIGNUP] Verification email successfully sent to ${user.email}`);
     } catch (emailError) {
-      console.error("Failed to send verification email:", emailError.message);
-      console.log(`[DEV/TEST] Verification URL: ${verificationUrl}`);
+      console.error(`[SIGNUP ERROR] Email sending failed: ${emailError.message}`);
+      console.log(`[DEV/TEST ONLY] Copy & paste this URL into browser to verify: ${verificationUrl}`);
     }
 
     res.status(201).json({
@@ -96,14 +102,18 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { mobile, password } = req.body;
+    console.log(`[LOGIN ATTEMPT] Started login check for mobile: ${mobile}`);
 
     // Admin shortcut: check env vars for admin login
     const adminId = process.env.ADMIN_USERNAME;
     const adminPass = process.env.ADMIN_PASSWORD;
     if (adminId && adminPass && mobile === adminId) {
+      console.log(`[LOGIN] Checking admin login attempt for ID: ${mobile}`);
       if (password !== adminPass) {
+        console.warn(`[LOGIN REJECTED] Admin password mismatch for ID: ${mobile}`);
         return res.status(401).json({ message: "Invalid admin credentials" });
       }
+      console.log(`[LOGIN SUCCESS] Admin logged in successfully.`);
       const token = generateToken("admin");
       return res.json({
         token,
@@ -112,6 +122,7 @@ const login = async (req, res) => {
     }
 
     if (!mobile || !password) {
+      console.warn("[LOGIN REJECTED] Missing mobile or password parameter");
       return res
         .status(400)
         .json({ message: "Mobile number and password required" });
@@ -119,6 +130,7 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ mobile });
     if (!user) {
+      console.warn(`[LOGIN REJECTED] Mobile number not found in database: ${mobile}`);
       return res
         .status(404)
         .json({ message: "Mobile number is not registered" });
@@ -126,38 +138,48 @@ const login = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.warn(`[LOGIN REJECTED] Password mismatch for mobile: ${mobile}`);
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    console.log(`[LOGIN] User found: ${user._id}. Email: ${user.email}, isVerified: ${user.isVerified}`);
     if (!user.isVerified) {
+      console.warn(`[LOGIN REJECTED] Blocked unverified user from logging in. UserID: ${user._id}`);
       return res
         .status(401)
         .json({ message: "Please verify your email before logging in." });
     }
 
+    console.log(`[LOGIN SUCCESS] Token issued for user ID: ${user._id}, Mobile: ${mobile}`);
     res.json({
       token: generateToken(user._id),
       user: formatUser(user),
     });
-  } catch (_error) {
+  } catch (error) {
+    console.error(`[LOGIN ERROR] Login function error: ${error.message}`);
     res.status(500).json({ message: "Login failed" });
   }
 };
 
 const verifyEmail = async (req, res) => {
+  console.log(`[VERIFICATION ATTEMPT] Received email verification request with token: ${req.params.token}`);
   try {
     const decoded = jwt.verify(
       req.params.token,
       process.env.JWT_SECRET || "aquafine_dev_secret",
     );
+    console.log(`[VERIFICATION] Decoded token payload user ID: ${decoded.id}`);
+    
     const user = await User.findById(decoded.id);
-
     if (!user) {
+      console.warn(`[VERIFICATION REJECTED] No user associated with ID: ${decoded.id}`);
       return res.status(404).send("Invalid verification link");
     }
 
+    console.log(`[VERIFICATION] Previous status isVerified for User ${user._id} was: ${user.isVerified}`);
     user.isVerified = true;
     await user.save();
+    console.log(`[VERIFICATION SUCCESS] User verified successfully in database: ${user._id}, email: ${user.email}`);
 
     res.send(`
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f4f7f8;font-family:Arial,Helvetica,sans-serif;">
