@@ -1,0 +1,52 @@
+# Environment variables (Secrets)
+.env
+.env.local
+.env.production
+.env.development
+.env.staging
+*.env
+.env*
+.env.*
+
+# Dependency directories
+node_modules
+node_modules/
+**/node_modules
+**/node_modules/
+
+# Build outputs
+dist
+dist/
+**/dist
+**/dist/
+build
+build/
+**/build
+**/build/
+.expo
+.expo/
+**/.expo
+**/.expo/
+
+# Native build folders
+android
+android/
+**/android
+**/android/
+ios
+ios/
+**/ios
+**/ios/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS/Editor configurations
+.DS_Store
+.vscode/
+.idea/
+Thumbs.db
