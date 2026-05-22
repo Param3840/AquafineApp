@@ -1,4 +1,16 @@
-import { CreditCard, MapPin, Plus, Edit2, Trash2, CheckCircle2, Home, Briefcase, Compass, ArrowLeft, Check } from "lucide-react-native";
+import {
+  CreditCard,
+  MapPin,
+  Plus,
+  Edit2,
+  Trash2,
+  CheckCircle2,
+  Home,
+  Briefcase,
+  Compass,
+  ArrowLeft,
+  Check,
+} from "lucide-react-native";
 import React, { useState, useEffect } from "react";
 import {
   ScrollView,
@@ -12,7 +24,7 @@ import {
   TextInput,
   Switch,
   KeyboardAvoidingView,
-  Platform
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import RazorpayCheckout from "react-native-razorpay";
@@ -22,18 +34,25 @@ import { useTheme } from "../context/ThemeContext";
 import { authService } from "../services/authService";
 import { paymentService } from "../services/paymentService";
 
-const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPaymentSuccess }) => {
+const CheckoutScreen = ({
+  cart,
+  total,
+  getQuantity,
+  onAdd,
+  onDecrease,
+  onPaymentSuccess,
+}) => {
   const { user, token, updateUser } = useAuth();
   const { colors, isDarkMode } = useTheme();
-  
+
   const [step, setStep] = useState(1); // Step 1: Address Selection, Step 2: Order Summary & Pay
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [loading, setLoading] = useState(false);
-  
+
   // Address Form Modal States
   const [formVisible, setFormVisible] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
-  
+
   // Form Field States
   const [fullName, setFullName] = useState("");
   const [mobile, setMobile] = useState("");
@@ -50,7 +69,8 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
   // Set default selected address on load
   useEffect(() => {
     if (user?.addresses && user.addresses.length > 0) {
-      const defaultAddr = user.addresses.find(a => a.isDefault) || user.addresses[0];
+      const defaultAddr =
+        user.addresses.find((a) => a.isDefault) || user.addresses[0];
       setSelectedAddressId(defaultAddr._id);
     } else {
       setSelectedAddressId(null);
@@ -112,21 +132,35 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
             } finally {
               setLoading(false);
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
   // Save / update address form submission
   const handleSubmitAddress = async () => {
-    if (!fullName.trim() || !mobile.trim() || !houseFlat.trim() || !areaStreet.trim() || !city.trim() || !state.trim() || !pincode.trim()) {
-      Alert.alert("Missing Fields", "Please fill in all required fields marked with *");
+    if (
+      !fullName.trim() ||
+      !mobile.trim() ||
+      !houseFlat.trim() ||
+      !areaStreet.trim() ||
+      !city.trim() ||
+      !state.trim() ||
+      !pincode.trim()
+    ) {
+      Alert.alert(
+        "Missing Fields",
+        "Please fill in all required fields marked with *",
+      );
       return;
     }
 
     if (mobile.trim().length < 10) {
-      Alert.alert("Invalid Mobile", "Please enter a valid 10-digit mobile number");
+      Alert.alert(
+        "Invalid Mobile",
+        "Please enter a valid 10-digit mobile number",
+      );
       return;
     }
 
@@ -147,7 +181,7 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
         state: state.trim(),
         pincode: pincode.trim(),
         addressType,
-        isDefault
+        isDefault,
       };
 
       let res;
@@ -160,7 +194,10 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
       if (res.success && res.user) {
         await updateUser(res.user);
         setFormVisible(false);
-        Alert.alert("Success", `Address ${editingAddress ? "updated" : "added"} successfully`);
+        Alert.alert(
+          "Success",
+          `Address ${editingAddress ? "updated" : "added"} successfully`,
+        );
       }
     } catch (err) {
       Alert.alert("Error", err.message || "Failed to save address");
@@ -172,39 +209,54 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
   // Execute checkout order processing
   const handlePayment = async () => {
     if (total <= 0) {
-      Alert.alert("Invalid Amount", "Please add items to your cart before proceeding.");
+      Alert.alert(
+        "Invalid Amount",
+        "Please add items to your cart before proceeding.",
+      );
       return;
     }
     if (!token) {
-      Alert.alert("Authentication Required", "Please log in to make a payment.");
+      Alert.alert(
+        "Authentication Required",
+        "Please log in to make a payment.",
+      );
       return;
     }
     if (!selectedAddressId) {
-      Alert.alert("Delivery Address Required", "Please select a delivery address.");
+      Alert.alert(
+        "Delivery Address Required",
+        "Please select a delivery address.",
+      );
       return;
     }
 
-    const deliveryAddress = user.addresses.find(a => a._id === selectedAddressId);
+    const deliveryAddress = user.addresses.find(
+      (a) => a._id === selectedAddressId,
+    );
     if (!deliveryAddress) {
-      Alert.alert("Invalid Address", "Selected address could not be found. Please re-select.");
+      Alert.alert(
+        "Invalid Address",
+        "Selected address could not be found. Please re-select.",
+      );
       return;
     }
 
     setLoading(true);
     try {
       const res = await paymentService.createOrder(total, token);
-      
+
       const prefill = {};
-      
-      const displayName = deliveryAddress.fullName || user?.fullName || user?.name;
+
+      const displayName =
+        deliveryAddress.fullName || user?.fullName || user?.name;
       if (displayName && displayName.trim()) {
         prefill.name = displayName.trim();
       }
-      
+
       if (user?.email && user.email.trim()) {
         prefill.email = user.email.trim();
       }
-      
+
       const contactPhone = deliveryAddress.mobile || user?.mobile;
       if (contactPhone && contactPhone.trim()) {
         const cleaned = contactPhone.replace(/\s+/g, "");
@@ -228,41 +280,49 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
         name: "Aquafine",
         order_id: res.order_id,
         prefill,
-        theme: { color: colors.teal }
+        theme: { color: colors.teal },
       };
 
       if (!RazorpayCheckout || typeof RazorpayCheckout.open !== "function") {
-        console.log("RazorpayCheckout native module is not available. Simulating success in development/sandbox mode.");
-        
+        console.log(
+          "RazorpayCheckout native module is not available. Simulating success in development/sandbox mode.",
+        );
+
         setTimeout(async () => {
           try {
             const mockPaymentId = `pay_mock_${Math.random().toString(36).substring(2, 11)}`;
-            await paymentService.saveOrder({
-              cartItems: cart.map(item => ({
-                name: item.name,
-                quantity: getQuantity(item.id),
-                price: item.price,
-              })),
-              totalAmount: total,
-              razorpayOrderId: res.order_id,
-              razorpayPaymentId: mockPaymentId,
-              customerDetails: {
-                fullName: deliveryAddress.fullName || user?.fullName || "Guest Customer",
-                email: user?.email || "N/A",
-                mobile: deliveryAddress.mobile || user?.mobile || "N/A"
+            await paymentService.saveOrder(
+              {
+                cartItems: cart.map((item) => ({
+                  name: item.name,
+                  quantity: getQuantity(item.id),
+                  price: item.price,
+                })),
+                totalAmount: total,
+                razorpayOrderId: res.order_id,
+                razorpayPaymentId: mockPaymentId,
+                customerDetails: {
+                  fullName:
+                    deliveryAddress.fullName ||
+                    user?.fullName ||
+                    "Guest Customer",
+                  email: user?.email || "N/A",
+                  mobile: deliveryAddress.mobile || user?.mobile || "N/A",
+                },
+                deliveryAddress: {
+                  fullName: deliveryAddress.fullName,
+                  mobile: deliveryAddress.mobile,
+                  houseFlat: deliveryAddress.houseFlat,
+                  areaStreet: deliveryAddress.areaStreet,
+                  landmark: deliveryAddress.landmark || "",
+                  city: deliveryAddress.city,
+                  state: deliveryAddress.state,
+                  pincode: deliveryAddress.pincode,
+                  addressType: deliveryAddress.addressType || "Home",
+                },
               },
-              deliveryAddress: {
-                fullName: deliveryAddress.fullName,
-                mobile: deliveryAddress.mobile,
-                houseFlat: deliveryAddress.houseFlat,
-                areaStreet: deliveryAddress.areaStreet,
-                landmark: deliveryAddress.landmark || "",
-                city: deliveryAddress.city,
-                state: deliveryAddress.state,
-                pincode: deliveryAddress.pincode,
-                addressType: deliveryAddress.addressType || "Home"
-              }
-            }, token);
+              token,
+            );
 
             Alert.alert(
               "Payment Successful",
@@ -276,13 +336,13 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
                     }
                   },
                 },
-              ]
+              ],
             );
           } catch (saveErr) {
             console.log("Failed to record order details:", saveErr);
             Alert.alert(
               "Transaction Verification Failed",
-              "Payment succeeded but we encountered an issue recording your order. Please take a screenshot and contact support."
+              "Payment succeeded but we encountered an issue recording your order. Please take a screenshot and contact support.",
             );
           } finally {
             setLoading(false);
@@ -294,32 +354,38 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
       RazorpayCheckout.open(options)
         .then(async (data) => {
           try {
-            await paymentService.saveOrder({
-              cartItems: cart.map(item => ({
-                name: item.name,
-                quantity: getQuantity(item.id),
-                price: item.price,
-              })),
-              totalAmount: total,
-              razorpayOrderId: res.order_id,
-              razorpayPaymentId: data.razorpay_payment_id,
-              customerDetails: {
-                fullName: deliveryAddress.fullName || user?.fullName || "Guest Customer",
-                email: user?.email || "N/A",
-                mobile: deliveryAddress.mobile || user?.mobile || "N/A"
+            await paymentService.saveOrder(
+              {
+                cartItems: cart.map((item) => ({
+                  name: item.name,
+                  quantity: getQuantity(item.id),
+                  price: item.price,
+                })),
+                totalAmount: total,
+                razorpayOrderId: res.order_id,
+                razorpayPaymentId: data.razorpay_payment_id,
+                customerDetails: {
+                  fullName:
+                    deliveryAddress.fullName ||
+                    user?.fullName ||
+                    "Guest Customer",
+                  email: user?.email || "N/A",
+                  mobile: deliveryAddress.mobile || user?.mobile || "N/A",
+                },
+                deliveryAddress: {
+                  fullName: deliveryAddress.fullName,
+                  mobile: deliveryAddress.mobile,
+                  houseFlat: deliveryAddress.houseFlat,
+                  areaStreet: deliveryAddress.areaStreet,
+                  landmark: deliveryAddress.landmark || "",
+                  city: deliveryAddress.city,
+                  state: deliveryAddress.state,
+                  pincode: deliveryAddress.pincode,
+                  addressType: deliveryAddress.addressType || "Home",
+                },
               },
-              deliveryAddress: {
-                fullName: deliveryAddress.fullName,
-                mobile: deliveryAddress.mobile,
-                houseFlat: deliveryAddress.houseFlat,
-                areaStreet: deliveryAddress.areaStreet,
-                landmark: deliveryAddress.landmark || "",
-                city: deliveryAddress.city,
-                state: deliveryAddress.state,
-                pincode: deliveryAddress.pincode,
-                addressType: deliveryAddress.addressType || "Home"
-              }
-            }, token);
+              token,
+            );
 
             Alert.alert(
               "Payment Successful",
@@ -333,13 +399,14 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
                     }
                   },
                 },
-              ]
+              ],
             );
           } catch (saveErr) {
             console.log("Failed to record order details:", saveErr);
             Alert.alert(
               "Transaction Verification Failed",
-              "Payment succeeded but we encountered an issue recording your order. Transaction ID: " + data.razorpay_payment_id
+              "Payment succeeded but we encountered an issue recording your order. Transaction ID: " +
+                data.razorpay_payment_id,
             );
           }
         })
@@ -347,7 +414,8 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
           console.log("Razorpay Checkout Error:", error);
           let errorMsg = "The transaction was cancelled or failed.";
           if (error && typeof error === "object") {
-            errorMsg = error.description || error.message || JSON.stringify(error);
+            errorMsg =
+              error.description || error.message || JSON.stringify(error);
           } else if (typeof error === "string") {
             errorMsg = error;
           }
@@ -357,7 +425,8 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
       console.log("Create order failed:", err);
       Alert.alert(
         "Order Creation Failed",
-        err.message || "Could not generate transaction order. Please try again."
+        err.message ||
+          "Could not generate transaction order. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -378,7 +447,7 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
   // Step 1 Render: Address Selection Screen
   const renderAddressSelection = () => {
     const addresses = user?.addresses || [];
-    
+
     return (
       <View style={styles.container}>
         {/* Step Indicator */}
@@ -387,31 +456,62 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
             <View style={[styles.stepCircle, { backgroundColor: colors.teal }]}>
               <Text style={styles.stepNumber}>1</Text>
             </View>
-            <Text style={[styles.stepLabel, { color: colors.slate, fontWeight: "800" }]}>Delivery Address</Text>
+            <Text
+              style={[
+                styles.stepLabel,
+                { color: colors.slate, fontWeight: "800" },
+              ]}
+            >
+              Delivery Address
+            </Text>
           </View>
           <View style={[styles.stepLine, { backgroundColor: colors.border }]} />
           <View style={styles.stepContainer}>
-            <View style={[styles.stepCircle, { backgroundColor: colors.border }]}>
-              <Text style={[styles.stepNumber, { color: colors.muted }]}>2</Text>
+            <View
+              style={[styles.stepCircle, { backgroundColor: colors.border }]}
+            >
+              <Text style={[styles.stepNumber, { color: colors.muted }]}>
+                2
+              </Text>
             </View>
-            <Text style={[styles.stepLabel, { color: colors.muted }]}>Order & Pay</Text>
+            <Text style={[styles.stepLabel, { color: colors.muted }]}>
+              Order & Pay
+            </Text>
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <Text style={[styles.sectionTitle, { color: colors.slate }]}>Select Delivery Address</Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.slate }]}>
+            Select Delivery Address
+          </Text>
 
           {addresses.length === 0 ? (
-            <View style={[styles.emptyContainer, { backgroundColor: colors.white, borderColor: colors.border }]}>
+            <View
+              style={[
+                styles.emptyContainer,
+                { backgroundColor: colors.white, borderColor: colors.border },
+              ]}
+            >
               <MapPin size={48} color={colors.muted} style={styles.emptyIcon} />
-              <Text style={[styles.emptyTitle, { color: colors.slate }]}>No Saved Addresses</Text>
-              <Text style={[styles.emptyText, { color: colors.muted }]}>Please add a delivery address to place your order.</Text>
+              <Text style={[styles.emptyTitle, { color: colors.slate }]}>
+                No Saved Addresses
+              </Text>
+              <Text style={[styles.emptyText, { color: colors.muted }]}>
+                Please add a delivery address to place your order.
+              </Text>
               <TouchableOpacity
                 style={[styles.addButton, { backgroundColor: colors.teal }]}
                 activeOpacity={0.8}
                 onPress={handleAddNewAddress}
               >
-                <Plus size={16} color={colors.white} style={styles.addButtonIcon} />
+                <Plus
+                  size={16}
+                  color={colors.white}
+                  style={styles.addButtonIcon}
+                />
                 <Text style={styles.addButtonText}>Add New Address</Text>
               </TouchableOpacity>
             </View>
@@ -427,8 +527,8 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
                       {
                         backgroundColor: colors.white,
                         borderColor: isSelected ? colors.teal : colors.border,
-                        borderWidth: isSelected ? 2 : 1
-                      }
+                        borderWidth: isSelected ? 2 : 1,
+                      },
                     ]}
                     activeOpacity={0.9}
                     onPress={() => setSelectedAddressId(addr._id)}
@@ -436,8 +536,15 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
                     <View style={styles.addressCardHeader}>
                       <View style={styles.addressTypeBadgeRow}>
                         {getAddressIcon(addr.addressType)}
-                        <Text style={[styles.addressTypeBadge, { color: colors.teal }]}>
-                          {addr.addressType ? addr.addressType.toUpperCase() : "HOME"}
+                        <Text
+                          style={[
+                            styles.addressTypeBadge,
+                            { color: colors.teal },
+                          ]}
+                        >
+                          {addr.addressType
+                            ? addr.addressType.toUpperCase()
+                            : "HOME"}
                         </Text>
                         {addr.isDefault && (
                           <View style={styles.defaultBadge}>
@@ -446,34 +553,70 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
                         )}
                       </View>
                       <View style={styles.selectionDotOutline}>
-                        {isSelected && <View style={[styles.selectionDotFilled, { backgroundColor: colors.teal }]} />}
+                        {isSelected && (
+                          <View
+                            style={[
+                              styles.selectionDotFilled,
+                              { backgroundColor: colors.teal },
+                            ]}
+                          />
+                        )}
                       </View>
                     </View>
 
-                    <Text style={[styles.addressName, { color: colors.slate }]}>{addr.fullName}</Text>
-                    <Text style={[styles.addressDetails, { color: colors.muted }]}>
+                    <Text style={[styles.addressName, { color: colors.slate }]}>
+                      {addr.fullName}
+                    </Text>
+                    <Text
+                      style={[styles.addressDetails, { color: colors.muted }]}
+                    >
                       {addr.houseFlat}, {addr.areaStreet}
                       {addr.landmark ? `\nLandmark: ${addr.landmark}` : ""}
                       {`\n${addr.city}, ${addr.state} - ${addr.pincode}`}
                     </Text>
-                    <Text style={[styles.addressMobile, { color: colors.slate }]}>Mobile: {addr.mobile}</Text>
+                    <Text
+                      style={[styles.addressMobile, { color: colors.slate }]}
+                    >
+                      Mobile: {addr.mobile}
+                    </Text>
 
                     {/* CRUD Actions */}
-                    <View style={[styles.addressCardActions, { borderTopColor: colors.border }]}>
+                    <View
+                      style={[
+                        styles.addressCardActions,
+                        { borderTopColor: colors.border },
+                      ]}
+                    >
                       <TouchableOpacity
                         style={styles.actionBtn}
                         onPress={() => handleEditAddress(addr)}
                       >
                         <Edit2 size={14} color={colors.muted} />
-                        <Text style={[styles.actionBtnText, { color: colors.muted }]}>Edit</Text>
+                        <Text
+                          style={[
+                            styles.actionBtnText,
+                            { color: colors.muted },
+                          ]}
+                        >
+                          Edit
+                        </Text>
                       </TouchableOpacity>
-                      <View style={[styles.actionDivider, { backgroundColor: colors.border }]} />
+                      <View
+                        style={[
+                          styles.actionDivider,
+                          { backgroundColor: colors.border },
+                        ]}
+                      />
                       <TouchableOpacity
                         style={styles.actionBtn}
                         onPress={() => handleDeleteAddress(addr._id)}
                       >
                         <Trash2 size={14} color={colors.red} />
-                        <Text style={[styles.actionBtnText, { color: colors.red }]}>Delete</Text>
+                        <Text
+                          style={[styles.actionBtnText, { color: colors.red }]}
+                        >
+                          Delete
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   </TouchableOpacity>
@@ -485,8 +628,16 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
                 activeOpacity={0.8}
                 onPress={handleAddNewAddress}
               >
-                <Plus size={18} color={colors.teal} style={styles.addButtonIcon} />
-                <Text style={[styles.dashedAddButtonText, { color: colors.teal }]}>Add New Address</Text>
+                <Plus
+                  size={18}
+                  color={colors.teal}
+                  style={styles.addButtonIcon}
+                />
+                <Text
+                  style={[styles.dashedAddButtonText, { color: colors.teal }]}
+                >
+                  Add New Address
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -494,11 +645,16 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
 
         {/* Deliver Sticky Bottom Bar */}
         {addresses.length > 0 && (
-          <View style={[styles.bottomActionBar, { backgroundColor: colors.white, borderTopColor: colors.border }]}>
+          <View
+            style={[
+              styles.bottomActionBar,
+              { backgroundColor: colors.white, borderTopColor: colors.border },
+            ]}
+          >
             <TouchableOpacity
               style={[
                 styles.proceedButtonContainer,
-                { opacity: selectedAddressId ? 1 : 0.6 }
+                { opacity: selectedAddressId ? 1 : 0.6 },
               ]}
               disabled={!selectedAddressId}
               activeOpacity={0.85}
@@ -510,7 +666,9 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
                 end={{ x: 1, y: 0 }}
                 style={styles.proceedButton}
               >
-                <Text style={styles.proceedButtonText}>Deliver to this Address</Text>
+                <Text style={styles.proceedButtonText}>
+                  Deliver to this Address
+                </Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -521,18 +679,31 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
 
   // Step 2 Render: Summary & payment trigger
   const renderOrderSummary = () => {
-    const deliveryAddress = user?.addresses?.find(a => a._id === selectedAddressId) || {};
-    
+    const deliveryAddress =
+      user?.addresses?.find((a) => a._id === selectedAddressId) || {};
+
     return (
       <View style={styles.container}>
         {/* Step Indicator */}
         <View style={styles.stepIndicatorRow}>
           <View style={styles.stepContainer}>
-            <TouchableOpacity style={styles.stepTouchHeader} onPress={() => setStep(1)}>
-              <View style={[styles.stepCircle, { backgroundColor: colors.teal }]}>
+            <TouchableOpacity
+              style={styles.stepTouchHeader}
+              onPress={() => setStep(1)}
+            >
+              <View
+                style={[styles.stepCircle, { backgroundColor: colors.teal }]}
+              >
                 <Check size={12} color={colors.white} />
               </View>
-              <Text style={[styles.stepLabel, { color: colors.teal, fontWeight: "700" }]}>Address Selected</Text>
+              <Text
+                style={[
+                  styles.stepLabel,
+                  { color: colors.teal, fontWeight: "700" },
+                ]}
+              >
+                Address Selected
+              </Text>
             </TouchableOpacity>
           </View>
           <View style={[styles.stepLine, { backgroundColor: colors.teal }]} />
@@ -540,43 +711,86 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
             <View style={[styles.stepCircle, { backgroundColor: colors.teal }]}>
               <Text style={styles.stepNumber}>2</Text>
             </View>
-            <Text style={[styles.stepLabel, { color: colors.slate, fontWeight: "800" }]}>Order & Pay</Text>
+            <Text
+              style={[
+                styles.stepLabel,
+                { color: colors.slate, fontWeight: "800" },
+              ]}
+            >
+              Order & Pay
+            </Text>
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Back button */}
           <TouchableOpacity style={styles.backLink} onPress={() => setStep(1)}>
             <ArrowLeft size={16} color={colors.teal} />
-            <Text style={[styles.backLinkText, { color: colors.teal }]}>Back to Address Selection</Text>
+            <Text style={[styles.backLinkText, { color: colors.teal }]}>
+              Back to Address Selection
+            </Text>
           </TouchableOpacity>
 
-          <Text style={[styles.sectionTitle, { color: colors.slate }]}>Delivery Details</Text>
+          <Text style={[styles.sectionTitle, { color: colors.slate }]}>
+            Delivery Details
+          </Text>
 
           {/* Delivery Address Preview Card */}
-          <View style={[styles.previewAddressCard, { backgroundColor: colors.white, borderColor: colors.border }]}>
+          <View
+            style={[
+              styles.previewAddressCard,
+              { backgroundColor: colors.white, borderColor: colors.border },
+            ]}
+          >
             <View style={styles.previewAddressHeader}>
               <View style={styles.addressTypeBadgeRow}>
                 {getAddressIcon(deliveryAddress.addressType)}
                 <Text style={[styles.addressTypeBadge, { color: colors.teal }]}>
-                  {deliveryAddress.addressType ? deliveryAddress.addressType.toUpperCase() : "HOME"}
+                  {deliveryAddress.addressType
+                    ? deliveryAddress.addressType.toUpperCase()
+                    : "HOME"}
                 </Text>
               </View>
               <TouchableOpacity onPress={() => setStep(1)}>
-                <Text style={[styles.changeAddressLink, { color: colors.teal }]}>CHANGE</Text>
+                <Text
+                  style={[styles.changeAddressLink, { color: colors.teal }]}
+                >
+                  CHANGE
+                </Text>
               </TouchableOpacity>
             </View>
-            <Text style={[styles.addressName, { color: colors.slate }]}>{deliveryAddress.fullName}</Text>
-            <Text style={[styles.addressDetails, { color: colors.muted, marginBottom: 8 }]}>
+            <Text style={[styles.addressName, { color: colors.slate }]}>
+              {deliveryAddress.fullName}
+            </Text>
+            <Text
+              style={[
+                styles.addressDetails,
+                { color: colors.muted, marginBottom: 8 },
+              ]}
+            >
               {deliveryAddress.houseFlat}, {deliveryAddress.areaStreet}
-              {deliveryAddress.landmark ? `, Landmark: ${deliveryAddress.landmark}` : ""}
+              {deliveryAddress.landmark
+                ? `, Landmark: ${deliveryAddress.landmark}`
+                : ""}
               {`, ${deliveryAddress.city}, ${deliveryAddress.state} - ${deliveryAddress.pincode}`}
             </Text>
-            <Text style={[styles.addressMobile, { color: colors.slate }]}>Mobile: {deliveryAddress.mobile}</Text>
+            <Text style={[styles.addressMobile, { color: colors.slate }]}>
+              Mobile: {deliveryAddress.mobile}
+            </Text>
           </View>
 
           {/* Items Summary */}
-          <Text style={[styles.sectionTitle, { color: colors.slate, marginTop: 22 }]}>Order Items</Text>
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: colors.slate, marginTop: 22 },
+            ]}
+          >
+            Order Items
+          </Text>
           {cart.map((item) => (
             <ProductLineItem
               key={item.id}
@@ -588,26 +802,57 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
           ))}
 
           {/* Payment breakdown */}
-          <Text style={[styles.sectionTitle, { color: colors.slate, marginTop: 22 }]}>Payment Summary</Text>
-          <View style={[styles.billDetailsCard, { backgroundColor: colors.white, borderColor: colors.border }]}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: colors.slate, marginTop: 22 },
+            ]}
+          >
+            Payment Summary
+          </Text>
+          <View
+            style={[
+              styles.billDetailsCard,
+              { backgroundColor: colors.white, borderColor: colors.border },
+            ]}
+          >
             <View style={styles.billRow}>
-              <Text style={[styles.billLabel, { color: colors.muted }]}>Cart Subtotal</Text>
-              <Text style={[styles.billVal, { color: colors.slate }]}>Rs. {total}</Text>
+              <Text style={[styles.billLabel, { color: colors.muted }]}>
+                Cart Subtotal
+              </Text>
+              <Text style={[styles.billVal, { color: colors.slate }]}>
+                Rs. {total}
+              </Text>
             </View>
             <View style={styles.billRow}>
-              <Text style={[styles.billLabel, { color: colors.muted }]}>Delivery Charges</Text>
-              <Text style={[styles.billValText, { color: colors.teal }]}>FREE</Text>
+              <Text style={[styles.billLabel, { color: colors.muted }]}>
+                Delivery Charges
+              </Text>
+              <Text style={[styles.billValText, { color: colors.teal }]}>
+                FREE
+              </Text>
             </View>
-            <View style={[styles.billDivider, { backgroundColor: colors.border }]} />
+            <View
+              style={[styles.billDivider, { backgroundColor: colors.border }]}
+            />
             <View style={styles.billRowTotal}>
-              <Text style={[styles.billTotalLabel, { color: colors.slate }]}>Total Amount Payable</Text>
-              <Text style={[styles.billTotalVal, { color: colors.slate }]}>Rs. {total}</Text>
+              <Text style={[styles.billTotalLabel, { color: colors.slate }]}>
+                Total Amount Payable
+              </Text>
+              <Text style={[styles.billTotalVal, { color: colors.slate }]}>
+                Rs. {total}
+              </Text>
             </View>
           </View>
         </ScrollView>
 
         {/* Pay Sticky Bottom Bar */}
-        <View style={[styles.bottomActionBar, { backgroundColor: colors.white, borderTopColor: colors.border }]}>
+        <View
+          style={[
+            styles.bottomActionBar,
+            { backgroundColor: colors.white, borderTopColor: colors.border },
+          ]}
+        >
           <TouchableOpacity
             style={styles.proceedButtonContainer}
             activeOpacity={0.82}
@@ -623,7 +868,9 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
               {loading ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.proceedButtonText}>Pay Now • Rs. {total}</Text>
+                <Text style={styles.proceedButtonText}>
+                  Pay Now • Rs. {total}
+                </Text>
               )}
             </LinearGradient>
           </TouchableOpacity>
@@ -635,8 +882,15 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
   return (
     <View style={[styles.root, { backgroundColor: colors.bg }]}>
       {/* Top Header */}
-      <View style={[styles.appBar, { borderBottomColor: colors.border, backgroundColor: colors.white }]}>
-        <Text style={[styles.appBarTitle, { color: colors.slate }]}>Checkout</Text>
+      <View
+        style={[
+          styles.appBar,
+          { borderBottomColor: colors.border, backgroundColor: colors.white },
+        ]}
+      >
+        <Text style={[styles.appBarTitle, { color: colors.slate }]}>
+          Checkout
+        </Text>
       </View>
 
       {step === 1 ? renderAddressSelection() : renderOrderSummary()}
@@ -652,60 +906,95 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalOverlay}
         >
-          <View style={[styles.modalContent, { backgroundColor: colors.white }]}>
+          <View
+            style={[styles.modalContent, { backgroundColor: colors.white }]}
+          >
             {/* Modal Header */}
-            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+            <View
+              style={[styles.modalHeader, { borderBottomColor: colors.border }]}
+            >
               <Text style={[styles.modalTitle, { color: colors.slate }]}>
-                {editingAddress ? "Edit Delivery Address" : "Add Delivery Address"}
+                {editingAddress
+                  ? "Edit Delivery Address"
+                  : "Add Delivery Address"}
               </Text>
               <TouchableOpacity onPress={() => setFormVisible(false)}>
-                <Text style={[styles.modalCloseBtn, { color: colors.muted }]}>Close</Text>
+                <Text style={[styles.modalCloseBtn, { color: colors.muted }]}>
+                  Close
+                </Text>
               </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={styles.modalForm} showsVerticalScrollIndicator={false}>
-              <Text style={[styles.formLabel, { color: colors.slate }]}>Contact Details</Text>
-              
+            <ScrollView
+              contentContainerStyle={styles.modalForm}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={[styles.formLabel, { color: colors.slate }]}>
+                Contact Details
+              </Text>
+
               <TextInput
                 placeholder="Full Name *"
                 placeholderTextColor={colors.muted}
-                style={[styles.input, { borderColor: colors.border, color: colors.slate }]}
+                style={[
+                  styles.input,
+                  { borderColor: colors.border, color: colors.slate },
+                ]}
                 value={fullName}
                 onChangeText={setFullName}
               />
-              
+
               <TextInput
                 placeholder="10-Digit Mobile Number *"
                 placeholderTextColor={colors.muted}
                 keyboardType="phone-pad"
                 maxLength={10}
-                style={[styles.input, { borderColor: colors.border, color: colors.slate }]}
+                style={[
+                  styles.input,
+                  { borderColor: colors.border, color: colors.slate },
+                ]}
                 value={mobile}
                 onChangeText={setMobile}
               />
 
-              <Text style={[styles.formLabel, { color: colors.slate, marginTop: 14 }]}>Address Information</Text>
-              
+              <Text
+                style={[
+                  styles.formLabel,
+                  { color: colors.slate, marginTop: 14 },
+                ]}
+              >
+                Address Information
+              </Text>
+
               <TextInput
                 placeholder="Flat / House No. / Building *"
                 placeholderTextColor={colors.muted}
-                style={[styles.input, { borderColor: colors.border, color: colors.slate }]}
+                style={[
+                  styles.input,
+                  { borderColor: colors.border, color: colors.slate },
+                ]}
                 value={houseFlat}
                 onChangeText={setHouseFlat}
               />
-              
+
               <TextInput
                 placeholder="Area / Street / Sector *"
                 placeholderTextColor={colors.muted}
-                style={[styles.input, { borderColor: colors.border, color: colors.slate }]}
+                style={[
+                  styles.input,
+                  { borderColor: colors.border, color: colors.slate },
+                ]}
                 value={areaStreet}
                 onChangeText={setAreaStreet}
               />
-              
+
               <TextInput
                 placeholder="Landmark (Optional)"
                 placeholderTextColor={colors.muted}
-                style={[styles.input, { borderColor: colors.border, color: colors.slate }]}
+                style={[
+                  styles.input,
+                  { borderColor: colors.border, color: colors.slate },
+                ]}
                 value={landmark}
                 onChangeText={setLandmark}
               />
@@ -714,14 +1003,22 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
                 <TextInput
                   placeholder="City *"
                   placeholderTextColor={colors.muted}
-                  style={[styles.input, styles.halfInput, { borderColor: colors.border, color: colors.slate }]}
+                  style={[
+                    styles.input,
+                    styles.halfInput,
+                    { borderColor: colors.border, color: colors.slate },
+                  ]}
                   value={city}
                   onChangeText={setCity}
                 />
                 <TextInput
                   placeholder="State *"
                   placeholderTextColor={colors.muted}
-                  style={[styles.input, styles.halfInput, { borderColor: colors.border, color: colors.slate }]}
+                  style={[
+                    styles.input,
+                    styles.halfInput,
+                    { borderColor: colors.border, color: colors.slate },
+                  ]}
                   value={state}
                   onChangeText={setState}
                 />
@@ -732,13 +1029,23 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
                 placeholderTextColor={colors.muted}
                 keyboardType="number-pad"
                 maxLength={6}
-                style={[styles.input, { borderColor: colors.border, color: colors.slate }]}
+                style={[
+                  styles.input,
+                  { borderColor: colors.border, color: colors.slate },
+                ]}
                 value={pincode}
                 onChangeText={setPincode}
               />
 
-              <Text style={[styles.formLabel, { color: colors.slate, marginTop: 14 }]}>Address Type</Text>
-              
+              <Text
+                style={[
+                  styles.formLabel,
+                  { color: colors.slate, marginTop: 14 },
+                ]}
+              >
+                Address Type
+              </Text>
+
               <View style={styles.addressTypeRow}>
                 {["Home", "Work", "Other"].map((type) => {
                   const isTypeSelected = addressType === type;
@@ -749,15 +1056,19 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
                         styles.addressTypeChip,
                         {
                           borderColor: colors.border,
-                          backgroundColor: isTypeSelected ? colors.teal : colors.white
-                        }
+                          backgroundColor: isTypeSelected
+                            ? colors.teal
+                            : colors.white,
+                        },
                       ]}
                       onPress={() => setAddressType(type)}
                     >
                       <Text
                         style={[
                           styles.addressTypeChipText,
-                          { color: isTypeSelected ? colors.white : colors.muted }
+                          {
+                            color: isTypeSelected ? colors.white : colors.muted,
+                          },
                         ]}
                       >
                         {type}
@@ -769,8 +1080,12 @@ const CheckoutScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onPayment
 
               <View style={styles.switchRow}>
                 <View>
-                  <Text style={[styles.switchLabel, { color: colors.slate }]}>Make Default Address</Text>
-                  <Text style={[styles.switchSub, { color: colors.muted }]}>Set this address as primary delivery destination</Text>
+                  <Text style={[styles.switchLabel, { color: colors.slate }]}>
+                    Make Default Address
+                  </Text>
+                  <Text style={[styles.switchSub, { color: colors.muted }]}>
+                    Set this address as primary delivery destination
+                  </Text>
                 </View>
                 <Switch
                   value={isDefault}
@@ -1034,7 +1349,7 @@ const styles = StyleSheet.create({
     right: 0,
     borderTopWidth: 1,
     paddingTop: 16,
-    paddingBottom: 102,
+    paddingBottom: 94,
     paddingHorizontal: 18,
     elevation: 8,
     shadowColor: "#000",
