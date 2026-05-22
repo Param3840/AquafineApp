@@ -38,7 +38,9 @@ if (process.env.VERIFY_SMTP_ON_STARTUP === "true") {
         user: emailUser,
         pass: emailPassClean,
       },
-      timeout: 10000,
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 5000,
     });
     testTransporter.verify()
       .then(() => console.log("[EMAIL DIAGNOSTICS SUCCESS] SMTP connection handshake verified successfully on startup."))
@@ -115,6 +117,17 @@ const sendEmail = async ({ to, subject, html, verificationToken }) => {
   const emailUser = process.env.EMAIL_USER;
   const emailPassClean = process.env.EMAIL_PASS.replace(/\s/g, "");
 
+  const mailOptions = {
+    from: `"Aquafine" <${emailUser}>`,
+    to,
+    subject,
+    html,
+  };
+
+  console.log("[EMAIL] Target recipient:", to);
+  console.log("[EMAIL] Mail options subject:", mailOptions.subject);
+  console.log("[EMAIL] Mail options from:", mailOptions.from);
+
   // --- CONFIGURATION 1: Primary built-in Gmail service (Port 465 SSL) ---
   try {
     console.log("[EMAIL] Attempting Primary Transporter (service: 'gmail' preset)...");
@@ -124,22 +137,32 @@ const sendEmail = async ({ to, subject, html, verificationToken }) => {
         user: emailUser,
         pass: emailPassClean,
       },
-      timeout: 10000, // 10s connection timeout
+      connectionTimeout: 5000, // 5s connection timeout to fail fast if port is blocked
+      greetingTimeout: 5000,   // 5s greeting timeout
+      socketTimeout: 5000,     // 5s socket inactivity timeout
     });
 
     console.log("[EMAIL] Directly executing transporter.sendMail()");
-    const info = await primaryTransporter.sendMail({
-      from: `"Aquafine" <${emailUser}>`,
-      to,
-      subject,
-      html,
-    });
+    console.log("[EMAIL] Before transporter.sendMail");
+
+    const info = await primaryTransporter.sendMail(mailOptions);
+
+    console.log("[EMAIL SUCCESS]");
+    console.log(info);
     console.log("[EMAIL] Email successfully dispatched");
     console.log(`[EMAIL SUCCESS] Mail delivered via Primary Transporter. MessageId: ${info.messageId}`);
     return info;
-  } catch (err1) {
-    console.warn(`[EMAIL WARNING] Primary Transporter sendMail failed: ${err1.message}`);
-    console.warn("[EMAIL] Detail primary sendMail error object:", err1);
+  } catch (error) {
+    console.error("[EMAIL FAILURE]");
+    console.error("Error Details:", error);
+    console.error("Error Message:", error.message);
+    console.error("Error Code:", error.code);
+    console.error("Error Response:", error.response);
+
+    const failureLabel = getFailureReason(error);
+    console.error(`[EMAIL FAILURE REASON] ${failureLabel}`);
+    
+    console.warn("[EMAIL WARNING] Primary Transporter sendMail failed. Retrying with Fallback Transporter...");
 
     // --- CONFIGURATION 2: Fallback Explicit Port 587 (TLS) ---
     try {
@@ -153,26 +176,31 @@ const sendEmail = async ({ to, subject, html, verificationToken }) => {
           user: emailUser,
           pass: emailPassClean,
         },
-        timeout: 10000, // 10s connection timeout
+        connectionTimeout: 5000, // 5s connection timeout
+        greetingTimeout: 5000,   // 5s greeting timeout
+        socketTimeout: 5000,     // 5s socket inactivity timeout
       });
 
       console.log("[EMAIL] Directly executing transporter.sendMail()");
-      const info = await fallbackTransporter.sendMail({
-        from: `"Aquafine" <${emailUser}>`,
-        to,
-        subject,
-        html,
-      });
+      console.log("[EMAIL] Before transporter.sendMail");
+
+      const info = await fallbackTransporter.sendMail(mailOptions);
+
+      console.log("[EMAIL SUCCESS]");
+      console.log(info);
       console.log("[EMAIL] Email successfully dispatched");
       console.log(`[EMAIL SUCCESS] Mail delivered via Fallback Transporter. MessageId: ${info.messageId}`);
       return info;
-    } catch (err2) {
-      console.error(`[EMAIL ERROR] Fallback Transporter sendMail failed: ${err2.message}`);
-      console.error("[EMAIL ERROR] Detail fallback sendMail error object:", err2);
+    } catch (fallbackError) {
+      console.error("[EMAIL FAILURE]");
+      console.error("Fallback Error Details:", fallbackError);
+      console.error("Fallback Error Message:", fallbackError.message);
+      console.error("Fallback Error Code:", fallbackError.code);
+      console.error("Fallback Error Response:", fallbackError.response);
 
-      const failureLabel = getFailureReason(err2);
-      console.error(`[EMAIL FAILURE REASON] ${failureLabel}`);
-      throw err2;
+      const fallbackFailureLabel = getFailureReason(fallbackError);
+      console.error(`[EMAIL FAILURE REASON] ${fallbackFailureLabel}`);
+      throw fallbackError;
     }
   }
 };
