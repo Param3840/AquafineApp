@@ -51,23 +51,27 @@ const sendEmail = async ({ to, subject, html, verificationToken }) => {
   console.log("[EMAIL] Mail options from:", mailOptions.from);
 
   try {
+    console.log("[RESEND] Sending verification email...");
     console.log("[EMAIL] Directly executing Resend API send()");
     console.log("[EMAIL] Before Resend send");
 
     const response = await resend.emails.send(mailOptions);
 
     if (response.error) {
+      console.error("[RESEND FAILURE]", response.error);
       console.error("[EMAIL FAILURE]");
       console.error("Resend API returned error details:", response.error);
       throw response.error;
     }
 
+    console.log("[RESEND SUCCESS]");
     console.log("[EMAIL SUCCESS]");
     console.log(response.data);
     console.log("[EMAIL] Email successfully dispatched");
     console.log(`[EMAIL SUCCESS] Mail delivered via Resend. Message ID/Response:`, response.data);
     return response.data;
   } catch (error) {
+    console.error("[RESEND FAILURE]", error);
     console.error("[EMAIL FAILURE]");
     console.error("Error Details:", error);
     console.error("Error Message:", error.message);
