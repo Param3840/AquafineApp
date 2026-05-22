@@ -3,7 +3,7 @@ const Payment = require("../models/Payment");
 
 const createOrder = async (req, res) => {
   try {
-    const { cartItems, totalAmount, razorpayOrderId, razorpayPaymentId, customerDetails } = req.body;
+    const { cartItems, totalAmount, razorpayOrderId, razorpayPaymentId, customerDetails, deliveryAddress } = req.body;
     const userId = req.user._id;
 
     if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
@@ -21,6 +21,20 @@ const createOrder = async (req, res) => {
     const customerName = customerDetails?.fullName || req.user.fullName || "Guest Customer";
     const email = customerDetails?.email || req.user.email || "N/A";
     const mobileNumber = customerDetails?.mobile || req.user.mobile || "N/A";
+
+    const fallbackAddress = {
+      fullName: customerName,
+      mobile: mobileNumber,
+      houseFlat: "N/A",
+      areaStreet: "N/A",
+      landmark: "N/A",
+      city: "N/A",
+      state: "N/A",
+      pincode: "000000",
+      addressType: "Home"
+    };
+
+    const finalDeliveryAddress = deliveryAddress || fallbackAddress;
 
     // Format products list for storage
     const formattedProducts = cartItems.map((p) => ({
@@ -41,6 +55,7 @@ const createOrder = async (req, res) => {
       razorpayPaymentId,
       paymentStatus: "success",
       orderStatus: "Pending",
+      deliveryAddress: finalDeliveryAddress,
     });
 
     // 2. Create the associated Payment record

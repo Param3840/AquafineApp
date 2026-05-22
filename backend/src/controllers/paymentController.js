@@ -44,7 +44,7 @@ const createOrder = async (req, res) => {
 
 const saveOrder = async (req, res) => {
   try {
-    const { products, totalAmount, razorpayOrderId, razorpayPaymentId } = req.body;
+    const { products, totalAmount, razorpayOrderId, razorpayPaymentId, deliveryAddress } = req.body;
     const userId = req.user._id;
 
     if (!products || !Array.isArray(products) || products.length === 0) {
@@ -58,6 +58,22 @@ const saveOrder = async (req, res) => {
     if (!razorpayOrderId || !razorpayPaymentId) {
       return res.status(400).json({ message: "Payment tracking identifiers are required" });
     }
+
+    const customerName = req.user.fullName || "Guest Customer";
+    const mobileNumber = req.user.mobile || "N/A";
+    const fallbackAddress = {
+      fullName: customerName,
+      mobile: mobileNumber,
+      houseFlat: "N/A",
+      areaStreet: "N/A",
+      landmark: "N/A",
+      city: "N/A",
+      state: "N/A",
+      pincode: "000000",
+      addressType: "Home"
+    };
+
+    const finalDeliveryAddress = deliveryAddress || fallbackAddress;
 
     // Format products list for storage
     const formattedProducts = products.map((p) => ({
@@ -75,6 +91,7 @@ const saveOrder = async (req, res) => {
       razorpayPaymentId,
       paymentStatus: "Success", // since Razorpay payment already succeeded on client
       orderStatus: "Pending", // initial state
+      deliveryAddress: finalDeliveryAddress,
     });
 
     // 2. Create the Payment

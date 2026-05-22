@@ -277,9 +277,30 @@ const updateProfile = async (req, res) => {
 
 const addAddress = async (req, res) => {
   try {
-    const { fullName, addressLine, city, state, pincode, phone, latitude, longitude, isDefault } = req.body;
+    console.log("[ADD ADDRESS] Received req.body:", req.body);
+    const {
+      fullName,
+      mobile,
+      phone,
+      houseFlat,
+      addressLine,
+      areaStreet,
+      landmark,
+      city,
+      state,
+      pincode,
+      addressType,
+      latitude,
+      longitude,
+      isDefault,
+    } = req.body;
 
-    if (!fullName || !addressLine || !city || !state || !pincode || !phone) {
+    const finalMobile = mobile || phone;
+    const finalHouseFlat = houseFlat || addressLine;
+    const finalAreaStreet = areaStreet || ".";
+    const finalAddressType = addressType || "Home";
+
+    if (!fullName || !finalMobile || !finalHouseFlat || !finalAreaStreet || !city || !state || !pincode) {
       return res.status(400).json({ message: "All required address fields must be filled" });
     }
 
@@ -294,11 +315,14 @@ const addAddress = async (req, res) => {
 
     user.addresses.push({
       fullName,
-      addressLine,
+      mobile: finalMobile,
+      houseFlat: finalHouseFlat,
+      areaStreet: finalAreaStreet,
+      landmark,
       city,
       state,
       pincode,
-      phone,
+      addressType: finalAddressType,
       latitude,
       longitude,
       isDefault: isDefault || user.addresses.length === 0,
@@ -318,7 +342,22 @@ const addAddress = async (req, res) => {
 const editAddress = async (req, res) => {
   try {
     const { addressId } = req.params;
-    const { fullName, addressLine, city, state, pincode, phone, latitude, longitude, isDefault } = req.body;
+    const {
+      fullName,
+      mobile,
+      phone,
+      houseFlat,
+      addressLine,
+      areaStreet,
+      landmark,
+      city,
+      state,
+      pincode,
+      addressType,
+      latitude,
+      longitude,
+      isDefault,
+    } = req.body;
 
     const user = await User.findById(req.user._id);
     if (!user) {
@@ -331,11 +370,19 @@ const editAddress = async (req, res) => {
     }
 
     if (fullName) address.fullName = fullName;
-    if (addressLine) address.addressLine = addressLine;
+    
+    const finalMobile = mobile || phone;
+    if (finalMobile) address.mobile = finalMobile;
+
+    const finalHouseFlat = houseFlat || addressLine;
+    if (finalHouseFlat) address.houseFlat = finalHouseFlat;
+
+    if (areaStreet !== undefined) address.areaStreet = areaStreet;
+    if (landmark !== undefined) address.landmark = landmark;
     if (city) address.city = city;
     if (state) address.state = state;
     if (pincode) address.pincode = pincode;
-    if (phone) address.phone = phone;
+    if (addressType) address.addressType = addressType;
     if (latitude !== undefined) address.latitude = latitude;
     if (longitude !== undefined) address.longitude = longitude;
 

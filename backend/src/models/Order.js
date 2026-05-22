@@ -52,6 +52,17 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    deliveryAddress: {
+      fullName: { type: String, required: true },
+      mobile: { type: String, required: true },
+      houseFlat: { type: String, required: true },
+      areaStreet: { type: String, required: true },
+      landmark: { type: String },
+      city: { type: String, required: true },
+      state: { type: String, required: true },
+      pincode: { type: String, required: true },
+      addressType: { type: String, enum: ["Home", "Work", "Other"], default: "Home" }
+    },
   },
   { timestamps: true }
 );

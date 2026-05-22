@@ -158,6 +158,7 @@ const getAllOrders = async (req, res) => {
       total: o.totalAmount,
       payment: o.razorpayPaymentId || "N/A",
       status: o.orderStatus,
+      deliveryAddress: o.deliveryAddress || null,
     }));
 
     res.json(formattedOrders);

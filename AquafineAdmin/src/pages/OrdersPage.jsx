@@ -243,8 +243,34 @@ const OrdersPage = () => {
                 <p style={styles.detailSubValue}>Payment ID: {selectedOrder.payment}</p>
               </div>
 
+              {/* Delivery Address Snapshot */}
+              {selectedOrder.deliveryAddress && (
+                <div style={styles.detailSection}>
+                  <h4 style={styles.sectionTitle}>Delivery Destination</h4>
+                  <div style={styles.addressBox}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <p style={{ ...styles.detailValue, margin: 0 }}>
+                        {selectedOrder.deliveryAddress.fullName}
+                      </p>
+                      <span style={styles.addressTypeBadge}>
+                        {selectedOrder.deliveryAddress.addressType || "Home"}
+                      </span>
+                    </div>
+                    <p style={{ ...styles.detailSubValue, margin: "0.25rem 0 0", lineHeight: "1.4" }}>
+                      {selectedOrder.deliveryAddress.houseFlat}, {selectedOrder.deliveryAddress.areaStreet}
+                      {selectedOrder.deliveryAddress.landmark && `, ${selectedOrder.deliveryAddress.landmark}`}
+                      <br />
+                      {selectedOrder.deliveryAddress.city}, {selectedOrder.deliveryAddress.state} - {selectedOrder.deliveryAddress.pincode}
+                    </p>
+                    <p style={{ ...styles.detailSubValue, margin: "0.25rem 0 0", fontWeight: 600, color: "var(--slate-700)" }}>
+                      Phone: {selectedOrder.deliveryAddress.mobile}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div style={styles.detailSection}>
-                <h4 style={styles.sectionTitle}>Summary Summary</h4>
+                <h4 style={styles.sectionTitle}>Order Summary</h4>
                 <p style={styles.detailValue}>{selectedOrder.items}</p>
                 <p style={styles.detailSubValue}>Order Date: {selectedOrder.date}</p>
               </div>
@@ -466,6 +492,24 @@ const styles = {
     fontWeight: "600",
     outline: "none",
     cursor: "pointer",
+  },
+  addressBox: {
+    backgroundColor: "var(--slate-50)",
+    border: "1px solid var(--slate-100)",
+    borderRadius: "10px",
+    padding: "0.85rem",
+    marginTop: "0.25rem",
+  },
+  addressTypeBadge: {
+    display: "inline-block",
+    fontSize: "0.65rem",
+    fontWeight: "800",
+    textTransform: "uppercase",
+    backgroundColor: "#f0fdfa",
+    color: "var(--teal)",
+    padding: "0.1rem 0.4rem",
+    borderRadius: "4px",
+    border: "1px solid #ccfbf1",
   },
 };
 

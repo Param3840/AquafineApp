@@ -41,4 +41,21 @@ export const authService = {
     request("/api/auth/validate-session", {
       headers: { Authorization: `Bearer ${token}` },
     }),
+  addAddress: (payload, token) =>
+    request("/api/auth/addresses", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    }),
+  editAddress: (addressId, payload, token) =>
+    request(`/api/auth/addresses/${addressId}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    }),
+  deleteAddress: (addressId, token) =>
+    request(`/api/auth/addresses/${addressId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 };
