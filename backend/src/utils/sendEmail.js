@@ -25,6 +25,26 @@ if (process.env.EMAIL_PASS) {
 } else {
   console.warn("[EMAIL DIAGNOSTICS] Warning: EMAIL_PASS is Undefined env variable");
 }
+
+// Optional Server Startup SMTP connection handshake verification
+if (process.env.VERIFY_SMTP_ON_STARTUP === "true") {
+  console.log("[EMAIL DIAGNOSTICS] Optional startup SMTP verification enabled.");
+  const emailUser = process.env.EMAIL_USER;
+  const emailPassClean = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s/g, "") : "";
+  if (emailUser && emailPassClean) {
+    const testTransporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: emailUser,
+        pass: emailPassClean,
+      },
+      timeout: 10000,
+    });
+    testTransporter.verify()
+      .then(() => console.log("[EMAIL DIAGNOSTICS SUCCESS] SMTP connection handshake verified successfully on startup."))
+      .catch((err) => console.warn(`[EMAIL DIAGNOSTICS WARNING] Startup SMTP handshake failed: ${err.message}`));
+  }
+}
 console.log("================================================\n");
 
 /**
@@ -78,7 +98,7 @@ const getFailureReason = (error) => {
 };
 
 /**
- * Sends a HTML verification email using a dual-transporter mechanism.
+ * Sends an HTML verification email using a dual-transporter mechanism.
  */
 const sendEmail = async ({ to, subject, html, verificationToken }) => {
   console.log(`[EMAIL] Executing sendEmail pipeline. Target: ${to}`);
@@ -95,14 +115,10 @@ const sendEmail = async ({ to, subject, html, verificationToken }) => {
   const emailUser = process.env.EMAIL_USER;
   const emailPassClean = process.env.EMAIL_PASS.replace(/\s/g, "");
 
-  let transporter;
-  let connectionSuccess = false;
-  let connectionError = null;
-
   // --- CONFIGURATION 1: Primary built-in Gmail service (Port 465 SSL) ---
   try {
     console.log("[EMAIL] Attempting Primary Transporter (service: 'gmail' preset)...");
-    transporter = nodemailer.createTransport({
+    const primaryTransporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: emailUser,
@@ -111,21 +127,24 @@ const sendEmail = async ({ to, subject, html, verificationToken }) => {
       timeout: 10000, // 10s connection timeout
     });
 
-    console.log("[EMAIL] Verifying primary SMTP connection handshake...");
-    await transporter.verify();
-    console.log("[EMAIL SUCCESS] SMTP connected successfully (Primary: service: 'gmail')");
-    connectionSuccess = true;
+    console.log("[EMAIL] Directly executing transporter.sendMail()");
+    const info = await primaryTransporter.sendMail({
+      from: `"Aquafine" <${emailUser}>`,
+      to,
+      subject,
+      html,
+    });
+    console.log("[EMAIL] Email successfully dispatched");
+    console.log(`[EMAIL SUCCESS] Mail delivered via Primary Transporter. MessageId: ${info.messageId}`);
+    return info;
   } catch (err1) {
-    connectionError = err1;
-    console.warn(`[EMAIL WARNING] Primary SMTP handshake failed: ${err1.message}`);
-    console.warn("[EMAIL] Detail primary verification error object:", err1);
-  }
+    console.warn(`[EMAIL WARNING] Primary Transporter sendMail failed: ${err1.message}`);
+    console.warn("[EMAIL] Detail primary sendMail error object:", err1);
 
-  // --- CONFIGURATION 2: Fallback Explicit Port 587 (TLS) ---
-  if (!connectionSuccess) {
+    // --- CONFIGURATION 2: Fallback Explicit Port 587 (TLS) ---
     try {
       console.log("[EMAIL] Attempting Fallback Transporter (explicit host: 'smtp.gmail.com', port: 587)...");
-      transporter = nodemailer.createTransport({
+      const fallbackTransporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
         port: 587,
         secure: false, // false for port 587 (TLS upgrade)
@@ -137,42 +156,24 @@ const sendEmail = async ({ to, subject, html, verificationToken }) => {
         timeout: 10000, // 10s connection timeout
       });
 
-      console.log("[EMAIL] Verifying fallback SMTP connection handshake...");
-      await transporter.verify();
-      console.log("[EMAIL SUCCESS] SMTP connected successfully (Fallback: port 587)");
-      connectionSuccess = true;
+      console.log("[EMAIL] Directly executing transporter.sendMail()");
+      const info = await fallbackTransporter.sendMail({
+        from: `"Aquafine" <${emailUser}>`,
+        to,
+        subject,
+        html,
+      });
+      console.log("[EMAIL] Email successfully dispatched");
+      console.log(`[EMAIL SUCCESS] Mail delivered via Fallback Transporter. MessageId: ${info.messageId}`);
+      return info;
     } catch (err2) {
-      connectionError = err2;
-      console.error(`[EMAIL ERROR] Fallback SMTP handshake failed: ${err2.message}`);
-      console.error("[EMAIL ERROR] Detail fallback verification error object:", err2);
+      console.error(`[EMAIL ERROR] Fallback Transporter sendMail failed: ${err2.message}`);
+      console.error("[EMAIL ERROR] Detail fallback sendMail error object:", err2);
+
+      const failureLabel = getFailureReason(err2);
+      console.error(`[EMAIL FAILURE REASON] ${failureLabel}`);
+      throw err2;
     }
-  }
-
-  // If both configurations failed, throw connection error
-  if (!connectionSuccess) {
-    const failureLabel = getFailureReason(connectionError);
-    console.error(`[EMAIL FAILURE REASON] ${failureLabel}`);
-    throw connectionError;
-  }
-
-  // --- SENDING MAIL ---
-  try {
-    console.log(`[EMAIL] Transport validated. Sending payload to ${to}...`);
-    console.log("Entering transporter.sendMail()");
-    const info = await transporter.sendMail({
-      from: `"Aquafine" <${emailUser}>`,
-      to,
-      subject,
-      html,
-    });
-    console.log("[EMAIL SUCCESS] Verification email sent successfully");
-    console.log(`[EMAIL SUCCESS] Mail delivered. MessageId: ${info.messageId}`);
-    return info;
-  } catch (sendError) {
-    const failureLabel = getFailureReason(sendError);
-    console.error(`[EMAIL ERROR] sendMail operation failed: ${sendError.message}`);
-    console.error(`[EMAIL FAILURE REASON] ${failureLabel}`);
-    throw sendError;
   }
 };
 
