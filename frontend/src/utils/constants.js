@@ -1,4 +1,7 @@
-export const API_BASE_URL = "http://192.168.1.42:4000";
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 
+                            process.env.API_BASE_URL || 
+                            "https://aquafineapp.onrender.com";
+
 
 export const categories = ["All", "Premium", "Square", "Event Bottles"];
 

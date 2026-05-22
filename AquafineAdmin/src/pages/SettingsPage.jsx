@@ -30,7 +30,7 @@ const SettingsPage = () => {
   });
 
   const [keys, setKeys] = useState({
-    backendUrl: "http://localhost:4000",
+    backendUrl: import.meta.env.VITE_API_URL || "https://aquafineapp.onrender.com",
     razorpayKeyId: "rzp_test_pLDDTGgG2uW6sO",
     jwtExpiry: "30 Days Persistent",
   });
