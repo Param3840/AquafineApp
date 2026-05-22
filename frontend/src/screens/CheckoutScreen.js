@@ -870,7 +870,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 18,
-    paddingBottom: 112,
+    paddingBottom: 200,
   },
   sectionTitle: {
     fontSize: 16,
@@ -1033,7 +1033,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     borderTopWidth: 1,
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 102,
     paddingHorizontal: 18,
     elevation: 8,
     shadowColor: "#000",
