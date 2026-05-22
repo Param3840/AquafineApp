@@ -76,10 +76,12 @@ const register = async (req, res) => {
 
     try {
       console.log(`[SIGNUP] Triggering email delivery to: ${user.email}`);
+      console.log(`[SIGNUP] Verification token passed to email service: ${verificationToken}`);
       await sendEmail({
         to: user.email,
         subject: "Verify your Aquafine account",
         html: buildVerificationEmail({ fullName: user.fullName, verificationUrl }),
+        verificationToken,
       });
       console.log(`[SIGNUP] Verification email successfully sent to ${user.email}`);
     } catch (emailError) {

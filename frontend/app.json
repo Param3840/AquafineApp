@@ -5,17 +5,25 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0f766e"
-      }
+      },
+      "package": "com.param3840.aquafine"
     },
     "web": {
       "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "20f0bebb-4c40-43e5-8955-deebc528e176"
+      }
     }
   }
 }
