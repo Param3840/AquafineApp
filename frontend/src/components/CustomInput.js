@@ -1,17 +1,25 @@
 import React, { useState } from "react";
 import { StyleSheet, TextInput, View, TouchableOpacity } from "react-native";
-import { colors } from "../styles/theme";
 import { Eye, EyeOff } from "lucide-react-native";
+import { useTheme } from "../context/ThemeContext";
 
 const CustomInput = ({ secureTextEntry, style, ...props }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const { colors, isDarkMode } = useTheme();
 
   if (secureTextEntry) {
     return (
-      <View style={[styles.container, style]}>
+      <View style={[
+        styles.container,
+        {
+          backgroundColor: isDarkMode ? "#101d20" : "#f8fafc",
+          borderColor: isDarkMode ? "#1f2937" : "#dbe3ec",
+        },
+        style
+      ]}>
         <TextInput
-          style={styles.input}
-          placeholderTextColor="#94a3b8"
+          style={[styles.input, { color: colors.slate }]}
+          placeholderTextColor={isDarkMode ? "#64748b" : "#94a3b8"}
           secureTextEntry={!showPassword}
           autoCapitalize="none"
           {...props}
@@ -22,9 +30,9 @@ const CustomInput = ({ secureTextEntry, style, ...props }) => {
           activeOpacity={0.7}
         >
           {showPassword ? (
-            <EyeOff size={20} color="#94a3b8" />
+            <EyeOff size={20} color={isDarkMode ? "#64748b" : "#94a3b8"} />
           ) : (
-            <Eye size={20} color="#94a3b8" />
+            <Eye size={20} color={isDarkMode ? "#64748b" : "#94a3b8"} />
           )}
         </TouchableOpacity>
       </View>
@@ -32,10 +40,17 @@ const CustomInput = ({ secureTextEntry, style, ...props }) => {
   }
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[
+      styles.container,
+      {
+        backgroundColor: isDarkMode ? "#101d20" : "#f8fafc",
+        borderColor: isDarkMode ? "#1f2937" : "#dbe3ec",
+      },
+      style
+    ]}>
       <TextInput
-        style={styles.input}
-        placeholderTextColor="#94a3b8"
+        style={[styles.input, { color: colors.slate }]}
+        placeholderTextColor={isDarkMode ? "#64748b" : "#94a3b8"}
         autoCapitalize="none"
         {...props}
       />
@@ -47,8 +62,6 @@ export default CustomInput;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#f8fafc",
-    borderColor: "#dbe3ec",
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
@@ -58,7 +71,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: colors.slate,
     fontSize: 15,
     fontWeight: "700",
     paddingVertical: 12,

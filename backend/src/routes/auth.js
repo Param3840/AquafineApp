@@ -6,6 +6,10 @@ const {
   register,
   verifyEmail,
   getUsers,
+  updateProfile,
+  addAddress,
+  editAddress,
+  deleteAddress,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -17,5 +21,11 @@ router.post("/forgot-password", forgotPassword);
 router.get("/verify/:token", verifyEmail);
 router.get("/me", protect, me);
 router.get("/users", protect, getUsers);
+
+// Profile and Addresses CRUD
+router.put("/profile", protect, updateProfile);
+router.post("/addresses", protect, addAddress);
+router.put("/addresses/:addressId", protect, editAddress);
+router.delete("/addresses/:addressId", protect, deleteAddress);
 
 module.exports = router;

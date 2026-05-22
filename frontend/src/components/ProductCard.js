@@ -3,7 +3,7 @@ import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import QuantityControl from "./QuantityControl";
-import { colors } from "../styles/theme";
+import { useTheme } from "../context/ThemeContext";
 
 const ProductCard = ({
   product,
@@ -12,60 +12,76 @@ const ProductCard = ({
   onAdd,
   onDecrease,
   onWishlist,
-}) => (
-  <View style={styles.card}>
-    <LinearGradient colors={["#f8fafc", "#e0f2fe"]} style={styles.imagePanel}>
-      <TouchableOpacity
-        style={[styles.wishlistBtn, wishlisted && styles.wishlistBtnActive]}
-        activeOpacity={0.82}
-        onPress={onWishlist}
-      >
-        <Heart
-          size={17}
-          color={wishlisted ? colors.white : colors.red}
-          fill={wishlisted ? colors.white : "transparent"}
-        />
-      </TouchableOpacity>
-      <Image source={product.image} style={styles.productImage} />
-    </LinearGradient>
+  onPress,
+}) => {
+  const { colors, isDarkMode } = useTheme();
 
-    <Text style={styles.name} numberOfLines={2}>
-      {product.name}
-    </Text>
-    <View style={styles.meta}>
-      <Text style={styles.price}>Rs. {product.price}</Text>
-      <Text style={styles.pcs}>{product.pcs} pcs</Text>
+  return (
+    <View style={[styles.card, { backgroundColor: colors.white, borderColor: isDarkMode ? "#1f3135" : "#eef2f7" }]}>
+      <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.cardClickArea}>
+        <LinearGradient 
+          colors={isDarkMode ? ["#101a1c", "#0a1214"] : ["#f8fafc", "#e0f2fe"]} 
+          style={styles.imagePanel}
+        >
+          <TouchableOpacity
+            style={[styles.wishlistBtn, wishlisted && styles.wishlistBtnActive]}
+            activeOpacity={0.82}
+            onPress={onWishlist}
+          >
+            <Heart
+              size={17}
+              color={wishlisted ? "#ffffff" : "#dc2626"}
+              fill={wishlisted ? "#ffffff" : "transparent"}
+            />
+          </TouchableOpacity>
+          <Image source={product.image} style={styles.productImage} />
+        </LinearGradient>
+
+        <Text style={[styles.name, { color: colors.slate }]} numberOfLines={2}>
+          {product.name}
+        </Text>
+      </TouchableOpacity>
+
+      <View style={styles.meta}>
+        <Text style={[styles.price, { color: colors.teal }]}>Rs. {product.price}</Text>
+        <Text style={[styles.pcs, { color: colors.muted }]}>{product.pcs} pcs</Text>
+      </View>
+
+      {quantity > 0 ? (
+        <QuantityControl quantity={quantity} onDecrease={onDecrease} onIncrease={onAdd} />
+      ) : (
+        <TouchableOpacity 
+          style={[styles.addButton, { backgroundColor: colors.teal }]} 
+          activeOpacity={0.86} 
+          onPress={onAdd}
+        >
+          <Text style={[styles.addText, { color: "#ffffff" }]}>Add to Cart</Text>
+          <View style={styles.addIcon}>
+            <Plus size={15} color={isDarkMode ? "#0b1315" : "#0f766e"} strokeWidth={3} />
+          </View>
+        </TouchableOpacity>
+      )}
     </View>
-
-    {quantity > 0 ? (
-      <QuantityControl quantity={quantity} onDecrease={onDecrease} onIncrease={onAdd} />
-    ) : (
-      <TouchableOpacity style={styles.addButton} activeOpacity={0.86} onPress={onAdd}>
-        <Text style={styles.addText}>Add to Cart</Text>
-        <View style={styles.addIcon}>
-          <Plus size={15} color={colors.teal} strokeWidth={3} />
-        </View>
-      </TouchableOpacity>
-    )}
-  </View>
-);
+  );
+};
 
 export default ProductCard;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
-    borderColor: "#eef2f7",
     borderRadius: 20,
     borderWidth: 1,
     elevation: 5,
     marginBottom: 18,
     padding: 10,
-    shadowColor: colors.slate,
+    shadowColor: "#0f172a",
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.08,
     shadowRadius: 18,
     width: "48%",
+  },
+  cardClickArea: {
+    width: "100%",
   },
   imagePanel: {
     alignItems: "center",
@@ -77,7 +93,7 @@ const styles = StyleSheet.create({
   },
   wishlistBtn: {
     alignItems: "center",
-    backgroundColor: colors.white,
+    backgroundColor: "#ffffff",
     borderRadius: 13,
     height: 32,
     justifyContent: "center",
@@ -88,7 +104,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   wishlistBtnActive: {
-    backgroundColor: colors.red,
+    backgroundColor: "#dc2626",
   },
   productImage: {
     height: 124,
@@ -96,7 +112,6 @@ const styles = StyleSheet.create({
     width: "92%",
   },
   name: {
-    color: "#14213d",
     fontSize: 14,
     fontWeight: "900",
     lineHeight: 18,
@@ -110,18 +125,15 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   price: {
-    color: colors.teal,
     fontSize: 16,
     fontWeight: "900",
   },
   pcs: {
-    color: colors.muted,
     fontSize: 12,
     fontWeight: "800",
   },
   addButton: {
     alignItems: "center",
-    backgroundColor: colors.teal,
     borderRadius: 15,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -130,13 +142,12 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   addText: {
-    color: colors.white,
     fontSize: 13,
     fontWeight: "900",
   },
   addIcon: {
     alignItems: "center",
-    backgroundColor: colors.white,
+    backgroundColor: "#ffffff",
     borderRadius: 11,
     height: 25,
     justifyContent: "center",

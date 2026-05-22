@@ -70,6 +70,20 @@ const createOrder = async (req, res) => {
   }
 };
 
+const getMyOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve user orders",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createOrder,
+  getMyOrders,
 };

@@ -53,8 +53,13 @@ export const AuthProvider = ({ children }) => {
     await AsyncStorage.multiRemove(["aquafine_token", "aquafine_user"]);
   };
 
+  const updateUser = async (updatedUser) => {
+    setUser(updatedUser);
+    await AsyncStorage.setItem("aquafine_user", JSON.stringify(updatedUser));
+  };
+
   const value = useMemo(
-    () => ({ user, token, loading, isAuthenticated: !!token, login, signup, logout }),
+    () => ({ user, token, loading, isAuthenticated: !!token, login, signup, logout, updateUser }),
     [user, token, loading],
   );
 

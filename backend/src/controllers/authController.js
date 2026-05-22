@@ -10,6 +10,7 @@ const formatUser = (user) => ({
   email: user.email,
   mobile: user.mobile,
   isVerified: user.isVerified,
+  addresses: user.addresses || [],
 });
 
 const buildVerificationEmail = ({ fullName, verificationUrl }) => `
@@ -218,6 +219,161 @@ const getUsers = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const { fullName, email, mobile } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (email && email !== user.email) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists) {
+        return res.status(400).json({ message: "Email is already in use" });
+      }
+      user.email = email;
+    }
+
+    if (mobile && mobile !== user.mobile) {
+      const mobileExists = await User.findOne({ mobile });
+      if (mobileExists) {
+        return res.status(400).json({ message: "Mobile number is already in use" });
+      }
+      user.mobile = mobile;
+    }
+
+    if (fullName) user.fullName = fullName;
+
+    await user.save();
+    res.json({
+      success: true,
+      message: "Profile updated successfully",
+      user: formatUser(user),
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update profile", error: error.message });
+  }
+};
+
+const addAddress = async (req, res) => {
+  try {
+    const { fullName, addressLine, city, state, pincode, phone, latitude, longitude, isDefault } = req.body;
+
+    if (!fullName || !addressLine || !city || !state || !pincode || !phone) {
+      return res.status(400).json({ message: "All required address fields must be filled" });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (isDefault) {
+      user.addresses.forEach(addr => addr.isDefault = false);
+    }
+
+    user.addresses.push({
+      fullName,
+      addressLine,
+      city,
+      state,
+      pincode,
+      phone,
+      latitude,
+      longitude,
+      isDefault: isDefault || user.addresses.length === 0,
+    });
+
+    await user.save();
+    res.status(201).json({
+      success: true,
+      message: "Address added successfully",
+      user: formatUser(user),
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to add address", error: error.message });
+  }
+};
+
+const editAddress = async (req, res) => {
+  try {
+    const { addressId } = req.params;
+    const { fullName, addressLine, city, state, pincode, phone, latitude, longitude, isDefault } = req.body;
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const address = user.addresses.id(addressId);
+    if (!address) {
+      return res.status(404).json({ message: "Address not found" });
+    }
+
+    if (fullName) address.fullName = fullName;
+    if (addressLine) address.addressLine = addressLine;
+    if (city) address.city = city;
+    if (state) address.state = state;
+    if (pincode) address.pincode = pincode;
+    if (phone) address.phone = phone;
+    if (latitude !== undefined) address.latitude = latitude;
+    if (longitude !== undefined) address.longitude = longitude;
+
+    if (isDefault !== undefined) {
+      address.isDefault = isDefault;
+      if (isDefault) {
+        user.addresses.forEach(addr => {
+          if (addr._id.toString() !== addressId) {
+            addr.isDefault = false;
+          }
+        });
+      }
+    }
+
+    await user.save();
+    res.json({
+      success: true,
+      message: "Address updated successfully",
+      user: formatUser(user),
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to edit address", error: error.message });
+  }
+};
+
+const deleteAddress = async (req, res) => {
+  try {
+    const { addressId } = req.params;
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const addressIndex = user.addresses.findIndex(addr => addr._id.toString() === addressId);
+    if (addressIndex === -1) {
+      return res.status(404).json({ message: "Address not found" });
+    }
+
+    const wasDefault = user.addresses[addressIndex].isDefault;
+    user.addresses.splice(addressIndex, 1);
+
+    if (wasDefault && user.addresses.length > 0) {
+      user.addresses[0].isDefault = true;
+    }
+
+    await user.save();
+    res.json({
+      success: true,
+      message: "Address deleted successfully",
+      user: formatUser(user),
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete address", error: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -225,5 +381,9 @@ module.exports = {
   verifyEmail,
   me,
   getUsers,
+  updateProfile,
+  addAddress,
+  editAddress,
+  deleteAddress,
 };
 

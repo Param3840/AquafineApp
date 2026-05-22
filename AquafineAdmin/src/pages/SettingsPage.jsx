@@ -182,59 +182,7 @@ const SettingsPage = () => {
             </div>
           </div>
 
-          {/* Card 3: Backend Keys & Credentials */}
-          <div className="card">
-            <div style={styles.cardHeader}>
-              <Server size={20} style={{ color: "var(--teal)" }} />
-              <div>
-                <h3 style={styles.cardTitle}>Backend APIs & Security Gateways</h3>
-                <p style={styles.cardDesc}>Maintain active endpoints and credentials without interrupting client runtimes.</p>
-              </div>
-            </div>
-            <div style={styles.cardDivider} />
-            
-            <div style={styles.warningAlert}>
-              <ShieldAlert size={18} style={{ flexShrink: 0 }} />
-              <span>
-                <strong>Warning:</strong> Modifying server URLs or Razorpay keys incorrectly will break active checkout payments and authentication sessions in both the admin portal and mobile apps.
-              </span>
-            </div>
 
-            <div className="form-grid">
-              <div className="input-group">
-                <label className="input-label" htmlFor="api-url">Express Server API Base URL</label>
-                <input
-                  id="api-url"
-                  type="text"
-                  className="input-field"
-                  value={keys.backendUrl}
-                  onChange={(e) => setKeys({ ...keys, backendUrl: e.target.value })}
-                />
-              </div>
-              <div className="input-group">
-                <label className="input-label" htmlFor="razorpay-key">Razorpay Key ID (Test Mode)</label>
-                <input
-                  id="razorpay-key"
-                  type="text"
-                  className="input-field"
-                  value={keys.razorpayKeyId}
-                  onChange={(e) => setKeys({ ...keys, razorpayKeyId: e.target.value })}
-                />
-              </div>
-              <div className="input-group">
-                <label className="input-label" htmlFor="session-length">JWT Persistence Session Limit</label>
-                <input
-                  id="session-length"
-                  type="text"
-                  className="input-field"
-                  value={keys.jwtExpiry}
-                  onChange={(e) => setKeys({ ...keys, jwtExpiry: e.target.value })}
-                  disabled
-                  style={{ backgroundColor: "var(--slate-50)", cursor: "not-allowed" }}
-                />
-              </div>
-            </div>
-          </div>
 
           {/* Action Row */}
           <div style={styles.actionRow}>

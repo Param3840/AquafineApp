@@ -2,62 +2,82 @@ import { Plus } from "lucide-react-native";
 import React from "react";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import QuantityControl from "../components/QuantityControl";
-import { colors } from "../styles/theme";
+import { useTheme } from "../context/ThemeContext";
 
-const CartScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onCheckout }) => (
-  <ScrollView contentContainerStyle={styles.page}>
-    <Text style={styles.title}>Cart</Text>
-    {cart.length ? (
-      cart.map((item) => (
-        <View key={item.id} style={styles.lineItem}>
-          <Image source={item.image} style={styles.image} />
-          <View style={styles.info}>
-            <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.meta}>Rs. {item.price} / {item.pcs} pcs</Text>
+const CartScreen = ({ cart, total, getQuantity, onAdd, onDecrease, onCheckout, onPressProduct }) => {
+  const { colors, isDarkMode } = useTheme();
+
+  return (
+    <ScrollView contentContainerStyle={styles.page}>
+      <Text style={[styles.title, { color: colors.slate }]}>Cart</Text>
+      {cart.length ? (
+        cart.map((item) => (
+          <View key={item.id} style={[styles.lineItem, { backgroundColor: colors.white, borderColor: colors.border }]}>
+            <TouchableOpacity 
+              activeOpacity={0.8} 
+              onPress={() => onPressProduct && onPressProduct(item)}
+              style={styles.clickableArea}
+            >
+              <Image source={item.image} style={styles.image} />
+              <View style={styles.info}>
+                <Text style={[styles.name, { color: colors.slate }]}>{item.name}</Text>
+                <Text style={[styles.meta, { color: colors.muted }]}>Rs. {item.price} / {item.pcs} pcs</Text>
+              </View>
+            </TouchableOpacity>
+            <QuantityControl
+              compact
+              quantity={getQuantity(item.id)}
+              onDecrease={() => onDecrease(item)}
+              onIncrease={() => onAdd(item)}
+            />
           </View>
-          <QuantityControl
-            compact
-            quantity={getQuantity(item.id)}
-            onDecrease={() => onDecrease(item)}
-            onIncrease={() => onAdd(item)}
-          />
+        ))
+      ) : (
+        <Text style={[styles.empty, { color: colors.muted }]}>Cart is empty</Text>
+      )}
+      {!!cart.length && (
+        <View style={[styles.totalBox, { backgroundColor: colors.white, borderColor: isDarkMode ? "#1f3135" : "#dbeafe" }]}>
+          <View>
+            <Text style={[styles.totalLabel, { color: colors.muted }]}>Total</Text>
+            <Text style={[styles.totalValue, { color: colors.slate }]}>Rs. {total}</Text>
+          </View>
+          <TouchableOpacity style={[styles.checkoutButton, { backgroundColor: colors.teal }]} onPress={onCheckout}>
+            <Text style={[styles.checkoutText, { color: "#ffffff" }]}>Checkout</Text>
+          </TouchableOpacity>
         </View>
-      ))
-    ) : (
-      <Text style={styles.empty}>Cart is empty</Text>
-    )}
-    {!!cart.length && (
-      <View style={styles.totalBox}>
-        <View>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalValue}>Rs. {total}</Text>
-        </View>
-        <TouchableOpacity style={styles.checkoutButton} onPress={onCheckout}>
-          <Text style={styles.checkoutText}>Checkout</Text>
-        </TouchableOpacity>
-      </View>
-    )}
-  </ScrollView>
-);
+      )}
+    </ScrollView>
+  );
+};
 
 export default CartScreen;
 
-export const ProductLineItem = ({ item, quantity, onAdd, onDecrease }) => (
-  <View style={styles.lineItem}>
-    <Image source={item.image} style={styles.image} />
-    <View style={styles.info}>
-      <Text style={styles.name}>{item.name}</Text>
-      <Text style={styles.meta}>Rs. {item.price} / {item.pcs} pcs</Text>
-    </View>
-    {quantity > 0 ? (
-      <QuantityControl compact quantity={quantity} onDecrease={onDecrease} onIncrease={onAdd} />
-    ) : (
-      <TouchableOpacity style={styles.smallAction} onPress={onAdd}>
-        <Plus size={16} color={colors.white} />
+export const ProductLineItem = ({ item, quantity, onAdd, onDecrease, onPress }) => {
+  const { colors, isDarkMode } = useTheme();
+
+  return (
+    <View style={[styles.lineItem, { backgroundColor: colors.white, borderColor: colors.border }]}>
+      <TouchableOpacity 
+        activeOpacity={0.8} 
+        onPress={() => onPress && onPress(item)}
+        style={styles.clickableArea}
+      >
+        <Image source={item.image} style={styles.image} />
+        <View style={styles.info}>
+          <Text style={[styles.name, { color: colors.slate }]}>{item.name}</Text>
+          <Text style={[styles.meta, { color: colors.muted }]}>Rs. {item.price} / {item.pcs} pcs</Text>
+        </View>
       </TouchableOpacity>
-    )}
-  </View>
-);
+      {quantity > 0 ? (
+        <QuantityControl compact quantity={quantity} onDecrease={onDecrease} onIncrease={onAdd} />
+      ) : (
+        <TouchableOpacity style={[styles.smallAction, { backgroundColor: colors.teal }]} onPress={onAdd}>
+          <Plus size={16} color="#ffffff" />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   page: {
@@ -66,25 +86,26 @@ const styles = StyleSheet.create({
     paddingTop: 48,
   },
   title: {
-    color: colors.slate,
     fontSize: 26,
     fontWeight: "900",
     marginBottom: 18,
   },
   empty: {
-    color: colors.muted,
     fontSize: 15,
     fontWeight: "700",
   },
   lineItem: {
     alignItems: "center",
-    backgroundColor: colors.white,
-    borderColor: colors.border,
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
     marginBottom: 12,
     padding: 10,
+  },
+  clickableArea: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
   },
   image: {
     height: 64,
@@ -94,21 +115,19 @@ const styles = StyleSheet.create({
   info: {
     flex: 1,
     marginLeft: 12,
+    paddingRight: 8,
   },
   name: {
-    color: colors.slate,
     fontSize: 14,
     fontWeight: "900",
   },
   meta: {
-    color: colors.muted,
     fontSize: 12,
     fontWeight: "700",
     marginTop: 5,
   },
   smallAction: {
     alignItems: "center",
-    backgroundColor: colors.teal,
     borderRadius: 12,
     height: 34,
     justifyContent: "center",
@@ -116,8 +135,6 @@ const styles = StyleSheet.create({
   },
   totalBox: {
     alignItems: "center",
-    backgroundColor: colors.white,
-    borderColor: "#dbeafe",
     borderRadius: 20,
     borderWidth: 1,
     flexDirection: "row",
@@ -126,26 +143,22 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   totalLabel: {
-    color: colors.muted,
     fontSize: 13,
     fontWeight: "800",
   },
   totalValue: {
-    color: colors.slate,
     fontSize: 22,
     fontWeight: "900",
     marginTop: 3,
   },
   checkoutButton: {
     alignItems: "center",
-    backgroundColor: colors.teal,
     borderRadius: 15,
     justifyContent: "center",
     paddingHorizontal: 18,
     paddingVertical: 12,
   },
   checkoutText: {
-    color: colors.white,
     fontSize: 14,
     fontWeight: "900",
   },
