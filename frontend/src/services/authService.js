@@ -37,4 +37,8 @@ export const authService = {
     request("/api/auth/me", {
       headers: { Authorization: `Bearer ${token}` },
     }),
+  validateSession: (token) =>
+    request("/api/auth/validate-session", {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 };

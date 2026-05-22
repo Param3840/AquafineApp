@@ -19,7 +19,7 @@ import SignupScreen from "./SignupScreen";
 import WishlistScreen from "./WishlistScreen";
 
 const HomeScreen = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, forceLoggedOut, setForceLoggedOut } = useAuth();
   const { colors, isDarkMode } = useTheme();
   const [screen, setScreen] = useState("home");
   const [authScreen, setAuthScreen] = useState("login");
@@ -27,6 +27,20 @@ const HomeScreen = () => {
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [toast, setToast] = useState("");
+
+  // Handle Session Invalidation and Redirect to Login
+  useEffect(() => {
+    if (forceLoggedOut) {
+      console.log("[HOME] forceLoggedOut detected. Wiping local cart/wishlist state and redirecting to login screen.");
+      setScreen("profile");
+      setAuthScreen("login");
+      setCart([]);
+      setWishlist([]);
+      if (setForceLoggedOut) {
+        setForceLoggedOut(false);
+      }
+    }
+  }, [forceLoggedOut, setForceLoggedOut]);
 
   // Product Popup Modal States
   const [selectedProduct, setSelectedProduct] = useState(null);

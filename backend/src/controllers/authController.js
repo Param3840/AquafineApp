@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const Admin = require("../models/Admin");
 const generateToken = require("../utils/generateToken");
 const sendEmail = require("../utils/sendEmail");
 
@@ -391,6 +392,44 @@ const deleteAddress = async (req, res) => {
   }
 };
 
+const validateSession = async (req, res) => {
+  try {
+    const header = req.headers.authorization || "";
+    const token = header.startsWith("Bearer ") ? header.split(" ")[1] : null;
+
+    if (!token) {
+      return res.json({ valid: false, reason: "USER_NOT_FOUND" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || "aquafine_dev_secret");
+    } catch (_err) {
+      return res.json({ valid: false, reason: "USER_NOT_FOUND" });
+    }
+
+    // Special quick check for "admin" string ID to handle mock admin logins
+    let user;
+    if (decoded.id === "admin") {
+      const adminId = process.env.ADMIN_USERNAME || "100";
+      user = { id: "admin", fullName: "Administrator", mobile: adminId };
+    } else {
+      user = await User.findById(decoded.id);
+      if (!user) {
+        user = await Admin.findById(decoded.id);
+      }
+    }
+
+    if (!user) {
+      return res.json({ valid: false, reason: "USER_NOT_FOUND" });
+    }
+
+    res.json({ valid: true });
+  } catch (_error) {
+    res.json({ valid: false, reason: "USER_NOT_FOUND" });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -402,5 +441,6 @@ module.exports = {
   addAddress,
   editAddress,
   deleteAddress,
+  validateSession,
 };
 

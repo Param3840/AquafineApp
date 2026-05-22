@@ -10,6 +10,7 @@ const {
   addAddress,
   editAddress,
   deleteAddress,
+  validateSession,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -19,6 +20,7 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/forgot-password", forgotPassword);
 router.get("/verify/:token", verifyEmail);
+router.get("/validate-session", validateSession);
 router.get("/me", protect, me);
 router.get("/users", protect, getUsers);
 
