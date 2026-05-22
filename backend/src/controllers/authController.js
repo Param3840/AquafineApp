@@ -31,14 +31,18 @@ const buildVerificationEmail = ({ fullName, verificationUrl }) => `
 `;
 
 const register = async (req, res) => {
+  console.time("signup_total");
+  console.log("Signup request received");
   try {
     const { fullName, email, mobile, password, confirmPassword } = req.body;
 
     if (!fullName || !email || !mobile || !password || !confirmPassword) {
+      console.timeEnd("signup_total");
       return res.status(400).json({ message: "All fields are required" });
     }
 
     if (password !== confirmPassword) {
+      console.timeEnd("signup_total");
       return res.status(400).json({ message: "Passwords do not match" });
     }
 
@@ -47,14 +51,15 @@ const register = async (req, res) => {
     });
 
     if (existingUser) {
+      console.timeEnd("signup_total");
       return res.status(409).json({
         message: "User already exists",
       });
     }
 
+    console.log("Creating user...");
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    console.log(`[SIGNUP] Creating database record for email: ${email}, mobile: ${mobile}`);
     const user = await User.create({
       fullName,
       email,
@@ -62,38 +67,48 @@ const register = async (req, res) => {
       password: hashedPassword,
       isVerified: false,
     });
+    console.log("User created");
     console.log(`[SIGNUP SUCCESS] User created in database with ID: ${user._id}, isVerified: ${user.isVerified}`);
 
-    console.log(`[SIGNUP] Generating verification token for user ID: ${user._id}`);
+    console.log("Generating verification token...");
     const verificationToken = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET || "aquafine_dev_secret",
       { expiresIn: "1d" }
     );
+    console.log("Verification token generated");
 
     const verificationUrl = `${req.protocol}://${req.get("host")}/api/auth/verify/${verificationToken}`;
+    console.log("Verification URL:", verificationUrl);
     console.log(`[SIGNUP] Generated verification URL: ${verificationUrl}`);
 
-    try {
-      console.log(`[SIGNUP] Triggering email delivery to: ${user.email}`);
-      console.log(`[SIGNUP] Verification token passed to email service: ${verificationToken}`);
-      await sendEmail({
-        to: user.email,
-        subject: "Verify your Aquafine account",
-        html: buildVerificationEmail({ fullName: user.fullName, verificationUrl }),
-        verificationToken,
-      });
-      console.log(`[SIGNUP] Verification email successfully sent to ${user.email}`);
-    } catch (emailError) {
-      console.error(`[SIGNUP ERROR] Email sending failed: ${emailError.message}`);
-      console.log(`[DEV/TEST ONLY] Copy & paste this URL into browser to verify: ${verificationUrl}`);
-    }
+    console.log("Preparing verification email...");
+    console.log("Calling sendVerificationEmail()");
 
+    // Background asynchronous execution so the user response returns immediately (1-3s)
+    sendEmail({
+      to: user.email,
+      subject: "Verify your Aquafine account",
+      html: buildVerificationEmail({ fullName: user.fullName, verificationUrl }),
+      verificationToken,
+    })
+      .then(() => {
+        console.log("Email success");
+        console.log(`[SIGNUP BACKGROUND SUCCESS] Verification email successfully sent to ${user.email}`);
+      })
+      .catch((error) => {
+        console.error("Email failed:", error);
+        console.error(`[SIGNUP BACKGROUND ERROR] Email sending failed in background: ${error.message}`);
+        console.log(`[DEV/TEST ONLY] Copy & paste this URL into browser to verify: ${verificationUrl}`);
+      });
+
+    console.timeEnd("signup_total");
     res.status(201).json({
       success: true,
       message: "Verification email sent. Please verify your email before login.",
     });
   } catch (error) {
+    console.timeEnd("signup_total");
     console.error("Registration failed:", error.message);
 
     res.status(500).json({

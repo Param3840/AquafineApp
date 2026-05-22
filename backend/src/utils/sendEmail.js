@@ -158,6 +158,7 @@ const sendEmail = async ({ to, subject, html, verificationToken }) => {
   // --- SENDING MAIL ---
   try {
     console.log(`[EMAIL] Transport validated. Sending payload to ${to}...`);
+    console.log("Entering transporter.sendMail()");
     const info = await transporter.sendMail({
       from: `"Aquafine" <${emailUser}>`,
       to,
