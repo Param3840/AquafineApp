@@ -153,6 +153,6 @@ Admin Dashboard Sync
 
 **Paramveer Kumar Singh**
 
-GitHub: https://github.com/Param3840
+GitHub: [https://github.com/Param3840](https://github.com/Param3840/AquafineApp)
 
 LinkedIn: https://linkedin.com/in/param3840
